@@ -10,5 +10,6 @@
 | [docs/02-requirements.md](docs/02-requirements.md) | 要件：利用者、利用の流れ、機能要件、非機能要件 |
 | [docs/03-system-design.md](docs/03-system-design.md) | システム設計：構成、データモデル、状態遷移、画面、通知 |
 | [docs/04-lock-selection.md](docs/04-lock-selection.md) | 鍵の選定：条件、候補の比較、推奨、購入後の確認項目 |
+| [docs/05-system-architecture.md](docs/05-system-architecture.md) | システム構成図：全体構成、主な流れ、障害時の動き |
 
 「仮定」と明記した箇所は、確認が取れていない前提です。未決事項は 01-concept.md の末尾にまとめています。
