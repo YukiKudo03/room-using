@@ -11,5 +11,6 @@
 | [docs/03-system-design.md](docs/03-system-design.md) | システム設計：構成、データモデル、状態遷移、画面、通知 |
 | [docs/04-lock-selection.md](docs/04-lock-selection.md) | 鍵の選定：条件、候補の比較、推奨、購入後の確認項目 |
 | [docs/05-system-architecture.md](docs/05-system-architecture.md) | システム構成図：全体構成、主な流れ、障害時の動き |
+| [docs/06-hosting.md](docs/06-hosting.md) | ホスティングの選定：条件、候補の比較、推奨、月額の見込み |
 
 「仮定」と明記した箇所は、確認が取れていない前提です。未決事項は 01-concept.md の末尾にまとめています。
