@@ -68,13 +68,13 @@ erDiagram
 | users | line_user_id（一意）, line_display_name, line_picture_url, nickname, role（host / guest）, status（active / suspended / withdrawn）, invitation_id, trusted_at, trusted_by |
 | invitations | token（一意）, kind（single / group）, label, max_uses, used_count, expires_at, status（active / disabled）, issued_by |
 | blocks | line_user_id（一意）, blocked_by, blocked_at, memo |
-| places | host_id, name, address, lat, lng, entry_method（pin / remote / both）, lock_adapter, lock_config（暗号化）, default_sleep_slots, has_shower, auto_approve_default, auto_approve_only_when_empty, trusted_accept_until |
+| places | host_id, name, address, lat, lng, entry_method（pin / remote / both）, lock_adapter, lock_config（暗号化）, smoking_policy（no_smoking / e_cig_only / outdoor_only）, default_sleep_slots, has_shower, auto_approve_default, auto_approve_only_when_empty, trusted_accept_until |
 | open_nights | place_id, night_on（営業日）, accept_from, accept_until, ends_at（翌 10:00）, sleep_slots, shower_available, auto_approve, status（open / closed / ended）, host_memo |
 | stays | open_night_id, guest_id, wants_sleep, wants_shower, eta, pickup_eta（空なら朝まで）, note, status, approved_by（host / auto）, shower_state（none / using / done）, access_code（暗号化）, 各状態の時刻 |
-| guide_pages | place_id, title, position, topic（sleep / shower / toilet / rules / entry / other）, requires_ack, visibility（registered / approved_tonight）, draft_body, published_version_id, archived_at |
-| guide_versions | guide_page_id, number, body, important, published_by, published_at |
+| guide_pages | place_id, title, position, topic（smoking / sleep / shower / toilet / rules / entry / other）, requires_ack, visibility（registered / approved_tonight）, draft_body, published_version_id, archived_at |
+| guide_versions | guide_page_id, number, body, smoking_policy（喫煙ページのみ）, important, published_by, published_at |
 | guide_acks | guide_version_id, user_id, kind（viewed / agreed）, occurred_at |
-| incidents | stay_id, body, 写真（添付）, created_at |
+| incidents | stay_id, kind（smoking / other）, body, 写真（添付）, created_at |
 | feedbacks | stay_id, helped（はい / いいえ）, comment |
 | audit_logs | occurred_at, actor_id, action, stay_id, open_night_id, target_user_id, detail |
 
@@ -215,6 +215,26 @@ stateDiagram-v2
 
 ページを開いたら `viewed` を記録する。同意の記録には版を紐づけるので、「この人はこの文面に、この日時に同意した」と後から示せる。
 
+### 喫煙ルール
+
+喫煙ルールは、ガイドの仕組み（版・同意・再同意）に載せつつ、ホストが弱められない固定のページとして扱う。
+
+- 場所ごとに `topic = smoking` のページを 1 つ、システムが必ず作る。`requires_ack` は常に有効、表示範囲は常に `registered`。ホストは削除・非表示・同意不要への変更ができない。
+- ページの見出し部分は `places.smoking_policy` から自動で作る（選択肢ごとの定型文とアイコン、違反時の扱い、火災の危険）。ホストが編集できるのは、その下の補足だけ。
+
+| 設定 | 表示する定型文 |
+|---|---|
+| `no_smoking` | 完全禁煙。室内・ベランダ・敷地内のどこでも、紙巻き・加熱式・電子タバコすべて不可 |
+| `e_cig_only` | 加熱式・電子タバコのみ可。紙巻きたばこは不可 |
+| `outdoor_only` | 喫煙はベランダ・屋外でのみ可。室内は不可 |
+
+- `smoking_policy` を変えると、その値を写した新しい版を、必ず `important = true` で公開する。全ゲストへの通知と、次の申込前の再同意が自動で起きる。
+- 同意は `guide_acks` に版つきで残るので、「この人は『完全禁煙』に、この日時に同意した」と示せる。
+- `smoking_policy` が未設定の場所は、開放（`open_nights` の作成）を拒否する。
+- 表示は共通の部品 1 つにまとめ、登録・今夜・申込・案内（到着前・滞在中）・ガイドのルールページの先頭に同じ見た目で出す。承認の通知には定型文を 1 行で入れる。
+- 登録画面では、喫煙ルールへの同意と、ほかのガイドへの同意を、別々のボタンで取る。
+- トラブル記録で `kind = smoking` を選ぶと、そのゲストの信頼済みを解除する。退去要請・利用停止は従来どおりホストが選ぶ。
+
 ### 表示の範囲
 
 - `registered`：登録済みの全ゲストが読める。寝具・シャワー・トイレ・ハウスルールはこれを既定にし、来る前に読めるようにする。
@@ -233,7 +253,7 @@ stateDiagram-v2
 | 案内 | ゲスト（承認後） | 住所、地図アプリへのリンク、「着きました」ボタン、30 分有効の暗証番号と残り時間、「ホストに開けてもらう」ボタン、ガイド（希望に合うページを先に表示）、シャワー・退出ボタン |
 | 今夜の管理 | ホスト | 開放の設定・締切・打ち切り、自動承認の切り替え、申込一覧と承認・辞退、滞在中のゲスト、解錠・施錠、承認取消・退去要請、負担メモ |
 | ゲスト管理 | ホスト | 招待の発行（QR 表示）・無効化、ゲスト一覧、信頼済み（自動承認）の設定、利用停止、まとめて停止 |
-| ガイド編集 | ホスト | ページの追加・並べ替え、本文の編集（WYSIWYG）、プレビュー、公開、同意の要否と表示範囲の設定、過去の版、ゲストごとの既読・同意状況 |
+| ガイド編集 | ホスト | 喫煙ルールの選択と補足、ページの追加・並べ替え、本文の編集（WYSIWYG）、プレビュー、公開、同意の要否と表示範囲の設定、過去の版、ゲストごとの既読・同意状況 |
 | 記録 | ホスト | 利用一覧、月ごとの回数・平均滞在時間、アンケート結果、監査ログ、トラブル記録、書き出し |
 
 ゲストの主経路は「今夜 → 申込 → 案内」の 3 画面。選択式にして文字入力をなくす。
@@ -246,7 +266,7 @@ stateDiagram-v2
 |---|---|---|
 | 開放を設定した | 全ゲスト | 今夜開放していること、受付時間 |
 | 申込があった | ホスト | 申込内容、初回かどうか、登録元の招待、「承認」「辞退」ボタン |
-| 承認・辞退した | ゲスト | 結果。承認時は案内画面とガイドへのリンク |
+| 承認・辞退した | ゲスト | 結果。承認時は喫煙ルール（1 行）、案内画面とガイドへのリンク |
 | 自動承認した | ホスト | 誰を自動承認したか、申込内容、「取り消す」ボタン（通知音なし） |
 | 自動承認の条件から外れた | ホスト | 通常の申込通知に、外れた理由を添える |
 | ゲストが取り消した | ホスト | 誰が取り消したか |
