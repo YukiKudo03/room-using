@@ -13,5 +13,6 @@
 | [docs/05-system-architecture.md](docs/05-system-architecture.md) | システム構成図：全体構成、主な流れ、障害時の動き |
 | [docs/06-hosting.md](docs/06-hosting.md) | ホスティングの選定：条件、候補の比較、推奨、月額の見込み |
 | [docs/07-trouble-prevention-review.md](docs/07-trouble-prevention-review.md) | 類似サービスのトラブル対策の調査：ホストとゲスト、ゲストどうし、ホストどうし、提案 |
+| [docs/08-trouble-measures-roadmap.md](docs/08-trouble-measures-roadmap.md) | トラブル対策の組み込み方針とロードマップ（案。要件・設計には未反映） |
 
 「仮定」と明記した箇所は、確認が取れていない前提です。未決事項は 01-concept.md の末尾にまとめています。
